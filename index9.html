@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaptopRent - High End Rental</title>
+    <style>
+        :root { --p: #4f46e5; --s: #0891b2; --danger: #ef4444; --success: #22c55e; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; margin: 0; color: #334155; }
+        .hidden { display: none !important; }
+        
+        /* Login */
+        #loginPage { height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--p), var(--s)); }
+        .box { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); text-align: center; width: 320px; }
+        .btn-log { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        
+        /* Nav */
+        nav { background: white; padding: 15px 5%; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        
+        /* Admin UI */
+        .card { background: white; padding: 25px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 15px; border-bottom: 1px solid #f1f5f9; }
+
+        /* User UI - Katalog */
+        .grid-user { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .item { background: white; padding: 20px; border-radius: 15px; border: 1px solid #e2e8f0; transition: 0.3s; position: relative; }
+        .item:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .price { color: var(--p); font-size: 1.2rem; font-weight: bold; }
+
+        /* Panel Pembayaran (DI LUAR KOTAK) */
+        #paymentPanel { background: white; border: 2px solid var(--p); padding: 25px; border-radius: 15px; margin-top: 30px; animation: slideIn 0.5s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-p { background: var(--p); color: white; }
+        .btn-s { background: var(--s); color: white; width: 100%; margin-top: 10px; }
+        .btn-d { background: var(--danger); color: white; }
+        .btn-out { background: #fee2e2; color: #dc2626; }
+    </style>
+</head>
+<body>
+
+<div id="loginPage">
+    <div class="box">
+        <h1 style="color:var(--p); margin-top:0;">LaptopRent</h1>
+        <p>Sistem Sewa Laptop Berbasis Web</p>
+        <button class="btn-log" style="background:var(--p)" onclick="masuk('admin')">Masuk Admin</button>
+        <button class="btn-log" style="background:var(--s)" onclick="masuk('user')">Masuk User</button>
+    </div>
+</div>
+
+<nav id="navbar" class="hidden">
+    <strong id="txtRole" style="font-size: 1.2rem; color: var(--p);">DASHBOARD</strong>
+    <button class="btn btn-out" onclick="keluar()">Logout</button>
+</nav>
+
+<div id="panelAdmin" class="container hidden">
+    <div class="card">
+        <h3 id="judulForm">Manajemen Unit Laptop</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <input type="text" id="inpNama" placeholder="Merk & Seri Laptop">
+            <input type="number" id="inpHarga" placeholder="Harga Sewa / Hari">
+        </div>
+        <select id="inpStatus">
+            <option value="Tersedia">Tersedia</option>
+            <option value="Disewa">Sedang Disewa</option>
+        </select>
+        <input type="hidden" id="saveIdx">
+        <button class="btn btn-p" style="width:100%" onclick="aksiSimpan()">Simpan Data Laptop</button>
+    </div>
+
+    <div class="card">
+        <h3>Monitoring Unit</h3>
+        <table>
+            <thead>
+                <tr style="background:#f8fafc">
+                    <th>Unit Laptop</th>
+                    <th>Harga Sewa</th>
+                    <th>Status</th>
+                    <th>Opsi</th>
+                </tr>
+            </thead>
+            <tbody id="bodyTabel"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="panelUser" class="container hidden">
+    <h2 style="text-align: center; margin-bottom: 30px;">Katalog Laptop Premium</h2>
+    <div id="gridUser" class="grid-user"></div>
+
+    <div id="paymentPanel" class="hidden">
+        <h3 style="margin-top:0; color:var(--p);">Konfirmasi Pembayaran</h3>
+        <p id="payDetail">Pilih laptop terlebih dahulu.</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <label>Nama Lengkap:</label>
+                <input type="text" id="custName" placeholder="Nama Anda">
+            </div>
+            <div>
+                <label>Metode Pembayaran:</label>
+                <select id="payMethod">
+                    <option>QRIS / E-Wallet</option>
+                    <option>Transfer Bank (BCA/Mandiri)</option>
+                    <option>Bayar di Tempat (COD)</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-p" style="width:100%; margin-top:10px;" onclick="bayarSekarang()">Konfirmasi Pembayaran & Sewa</button>
+        <button class="btn" style="background:#eee; width:100%; margin-top:5px;" onclick="tutupBayar()">Batal</button>
+    </div>
+</div>
+
+<script>
+    // Database Variasi Laptop Lebih Banyak
+    let db = [
+        { nama: "Macbook Air M2", harga: 450000, status: "Tersedia" },
+        { nama: "Asus ROG Zephyrus", harga: 500000, status: "Tersedia" },
+        { nama: "Lenovo ThinkPad X1", harga: 300000, status: "Tersedia" },
+        { nama: "HP Victus Gaming", harga: 350000, status: "Disewa" },
+        { nama: "Dell XPS 13", harga: 400000, status: "Tersedia" },
+        { nama: "Acer Predator", harga: 480000, status: "Tersedia" }
+    ];
+
+    let selectedLaptop = null;
+
+    function masuk(role) {
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('navbar').classList.remove('hidden');
+        
+        if(role === 'admin') {
+            document.getElementById('panelAdmin').classList.remove('hidden');
+            document.getElementById('panelUser').classList.add('hidden');
+            document.getElementById('txtRole').innerText = "🛠️ ADMIN PANEL";
+        } else {
+            document.getElementById('panelUser').classList.remove('hidden');
+            document.getElementById('panelAdmin').classList.add('hidden');
+            document.getElementById('txtRole').innerText = "👤 USER CATALOG";
+        }
+        refresh();
+    }
+
+    function keluar() {
+        if(confirm("Apakah anda ingin keluar?")) location.reload();
+    }
+
+    function refresh() {
+        const tabel = document.getElementById('bodyTabel');
+        const grid = document.getElementById('gridUser');
+        tabel.innerHTML = '';
+        grid.innerHTML = '';
+
+        db.forEach((item, index) => {
+            // Admin Table
+            tabel.innerHTML += `
+                <tr>
+                    <td><b>${item.nama}</b></td>
+                    <td>Rp ${item.harga.toLocaleString()}</td>
+                    <td><span style="background:${item.status === 'Tersedia' ? '#dcfce7' : '#fee2e2'}; color:${item.status === 'Tersedia' ? 'green' : 'red'}; padding:5px 10px; border-radius:20px; font-size:12px;">${item.status}</span></td>
+                    <td>
+                        <button class="btn btn-s" style="width:auto" onclick="panggilEdit(${index})">Edit</button>
+                        <button class="btn btn-d" onclick="hapusData(${index})">Hapus</button>
+                    </td>
+                </tr>`;
+
+            // User Grid
+            if(item.status === 'Tersedia') {
+                grid.innerHTML += `
+                    <div class="item">
+                        <h3 style="margin-top:0">${item.nama}</h3>
+                        <p class="price">Rp ${item.harga.toLocaleString()}<small style="color:#666; font-size:10px;">/hari</small></p>
+                        <button class="btn btn-s" onclick="bukaPembayaran(${index})">Pilih Unit</button>
+                    </div>`;
+            }
+        });
+    }
+
+    // Admin Logic
+    function aksiSimpan() {
+        const n = document.getElementById('inpNama').value;
+        const h = document.getElementById('inpHarga').value;
+        const s = document.getElementById('inpStatus').value;
+        const idx = document.getElementById('saveIdx').value;
+
+        if(!n || !h) return alert("Data tidak boleh kosong!");
+
+        if(idx === "") {
+            db.push({ nama: n, harga: parseInt(h), status: s });
+        } else {
+            db[idx] = { nama: n, harga: parseInt(h), status: s };
+            document.getElementById('saveIdx').value = "";
+            document.getElementById('judulForm').innerText = "Manajemen Unit Laptop";
+        }
+        
+        document.getElementById('inpNama').value = "";
+        document.getElementById('inpHarga').value = "";
+        refresh();
+    }
+
+    function panggilEdit(i) {
+        document.getElementById('inpNama').value = db[i].nama;
+        document.getElementById('inpHarga').value = db[i].harga;
+        document.getElementById('inpStatus').value = db[i].status;
+        document.getElementById('saveIdx').value = i;
+        document.getElementById('judulForm').innerText = "Edit: " + db[i].nama;
+        window.scrollTo(0,0);
+    }
+
+    function hapusData(i) {
+        if(confirm("Hapus unit " + db[i].nama + "?")) {
+            db.splice(i, 1);
+            refresh();
+        }
+    }
+
+    // User & Payment Logic
+    function bukaPembayaran(i) {
+        selectedLaptop = db[i];
+        document.getElementById('paymentPanel').classList.remove('hidden');
+        document.getElementById('payDetail').innerHTML = `Unit: <b>${selectedLaptop.nama}</b><br>Total Biaya: <b>Rp ${selectedLaptop.harga.toLocaleString()} / Hari</b>`;
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function tutupBayar() {
+        document.getElementById('paymentPanel').classList.add('hidden');
+    }
+
+    function bayarSekarang() {
+        const namaCust = document.getElementById('custName').value;
+        const metode = document.getElementById('payMethod').value;
+        if(!namaCust) return alert("Masukkan nama Anda!");
+
+        alert(`Terima Kasih ${namaCust}!\nPesanan ${selectedLaptop.nama} telah kami terima.\nSilahkan lakukan pembayaran melalui ${metode}.`);
+        tutupBayar();
+        document.getElementById('custName').value = "";
+    }
+</script>
+
+</body>
+</html>
